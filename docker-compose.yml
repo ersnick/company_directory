@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=adminpassword
+      - POSTGRES_DB=company_derectory
+    networks:
+      - company_derectory_network
+
+  app:
+    build: ./app
+    restart: always
+    volumes:
+      - ./app:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:adminpassword@postgres:5432/company_derectory
+    depends_on:
+      - postgres
+    networks:
+      - company_derectory_network
+
+  alembic:
+    image: python:3.11-slim
+    working_dir: /app
+    command: ["alembic", "upgrade", "head"]  # по умолчанию применяет миграции
+    volumes:
+      - ./app:/app          # монтируем папку с кодом
+      - ./alembic:/app/alembic  # монтируем локальную папку alembic
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:adminpassword@postgres:5432/company_derectory
+    depends_on:
+      - postgres
+    networks:
+      - company_derectory_network
+
+
+networks:
+  company_derectory_network:
+
+volumes:
+  pg_data:
