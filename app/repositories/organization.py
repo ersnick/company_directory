@@ -6,9 +6,11 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 
-from db.models import Organization, Building, Activity
 from repositories.base import BaseRepository
 
+from models.activity import Activity
+from models.building import Building
+from models.organization import Organization
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"

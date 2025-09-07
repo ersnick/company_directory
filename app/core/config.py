@@ -6,6 +6,7 @@ load_dotenv()
 
 class Settings:
     DATABASE_URL = os.getenv("DATABASE_URL")
+    API_KEY = os.getenv("API_KEY")
 
 
 settings = Settings()

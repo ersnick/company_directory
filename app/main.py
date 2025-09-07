@@ -1,24 +1,27 @@
 from contextlib import asynccontextmanager
-
-from db.database import BaseModel, engine
-from exceptions.exceptions import AppException
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from api import organization
+from db.database import engine
+from models import building
+from exceptions.exceptions import AppException
 
-# Асинхронная функция для инициализации базы данных
+
 async def init_db():
     async with engine.begin() as conn:
-        # Создание таблиц, если их нет
-        await conn.run_sync(BaseModel.metadata.create_all)
+        await conn.run_sync(building.BaseModel.metadata.create_all)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
+    await init_db()
+    yield
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.include_router(organization.router)
 
 
 @app.exception_handler(AppException)

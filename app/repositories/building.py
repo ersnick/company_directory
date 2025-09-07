@@ -1,5 +1,5 @@
-from db.models import Building
 from repositories.base import BaseRepository
+from models.building import Building
 
 
 class BuildingRepository(BaseRepository[Building]):

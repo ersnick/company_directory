@@ -1,5 +1,5 @@
-from db.models import OrganizationPhone
 from repositories.base import BaseRepository
+from models.organization import OrganizationPhone
 
 
 class OrganizationPhoneRepository(BaseRepository[OrganizationPhone]):

@@ -2,8 +2,8 @@ import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 
-from db.models import Activity
 from repositories.base import BaseRepository
+from app.models.activity import Activity
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:15
@@ -17,29 +15,17 @@ services:
   app:
     build: ./app
     restart: always
+    ports:
+      - "8000:8000"
     volumes:
       - ./app:/app
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:adminpassword@postgres:5432/company_derectory
+    env_file:
+      - ./.env
     depends_on:
       - postgres
+    command: sh -c "./wait-for-it.sh postgres alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
     networks:
       - company_derectory_network
-
-  alembic:
-    image: python:3.11-slim
-    working_dir: /app
-    command: ["alembic", "upgrade", "head"]  # по умолчанию применяет миграции
-    volumes:
-      - ./app:/app          # монтируем папку с кодом
-      - ./alembic:/app/alembic  # монтируем локальную папку alembic
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:adminpassword@postgres:5432/company_derectory
-    depends_on:
-      - postgres
-    networks:
-      - company_derectory_network
-
 
 networks:
   company_derectory_network:
