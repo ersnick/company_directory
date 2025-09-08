@@ -1,3 +1,19 @@
+# Инструкция по запуску:
+```git clone```
+
+```cd company_directory```
+
+```docker-compose up```
+
+## Документация
+
+[Swagger UI](http://localhost:8000/docs)
+
+[Redoc](http://localhost:8000/redoc)
+
+## Креды
+API_KEY = "TX9aH5cJC9xn4IygzfPNCCOt"
+
 # Тестовое задание "Создание REST API приложения"
 
 ## Описание.
