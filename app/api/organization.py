@@ -16,6 +16,51 @@ router = APIRouter(prefix="/organizations")
 organization_service = OrganizationService()
 
 
+@router.get("/map", response_model=List[OrganizationSchema])
+async def list_organizations_map(
+    # радиус
+    lat: Optional[float] = Query(None, description="Широта центра точки"),
+    lon: Optional[float] = Query(None, description="Долгота центра точки"),
+    radius_km: Optional[float] = Query(None, description="Радиус поиска (км)"),
+
+    # прямоугольник
+    lat_min: Optional[float] = Query(None, description="Минимальная широта"),
+    lat_max: Optional[float] = Query(None, description="Максимальная широта"),
+    lon_min: Optional[float] = Query(None, description="Минимальная долгота"),
+    lon_max: Optional[float] = Query(None, description="Максимальная долгота"),
+
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(api_key_auth),
+) -> List[OrganizationSchema]:
+    """
+    Список организаций по гео-фильтру:
+    - По радиусу (lat, lon, radius_km)
+    - По прямоугольной области (lat_min, lat_max, lon_min, lon_max)
+    """
+    try:
+        if lat is not None and lon is not None and radius_km is not None:
+            logger.info("Запрос организаций по радиусу: lat=%s, lon=%s, radius=%s", lat, lon, radius_km)
+            return await organization_service.get_organizations_in_radius(db, lat, lon, radius_km)
+
+        if all(v is not None for v in [lat_min, lat_max, lon_min, lon_max]):
+            logger.info(
+                "Запрос организаций по прямоугольнику: [%s,%s]x[%s,%s]",
+                lat_min, lat_max, lon_min, lon_max
+            )
+            return await organization_service.get_organizations_in_rectangle(db, lat_min, lat_max, lon_min, lon_max)
+
+        logger.warning("Некорректный запрос: не заданы параметры фильтрации")
+        raise HTTPException(
+            status_code=400,
+            detail="Нужно указать либо параметры радиуса (lat, lon, radius_km), либо прямоугольника (lat_min, lat_max, lon_min, lon_max)",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Внутренняя ошибка при обработке geo-запроса: %s", e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
 @router.get("/", response_model=List[OrganizationSchema])
 async def list_organizations(
     building_id: Optional[int] = Query(None, description="Фильтр по зданию"),
@@ -26,13 +71,23 @@ async def list_organizations(
     _: None = Depends(api_key_auth),
 ) -> List[OrganizationSchema]:
     """
-    Список организаций с поддержкой фильтров:
-    - building_id: фильтр по зданию
-    - activity_id: фильтр по виду деятельности
-    - root_activity_id: фильтр по дереву деятельности (включая вложенные, до 3 уровней)
-    - name: поиск по названию (частичное совпадение, регистронезависимое)
+    Список организаций с поддержкой фильтров (разрешён только один одновременно).
     """
     try:
+        filters = [building_id, activity_id, root_activity_id, name]
+        filters_set = [f for f in filters if f is not None]
+
+        if len(filters_set) > 1:
+            logger.warning(
+                "Некорректный запрос: передано несколько фильтров одновременно %s",
+                [("building_id", building_id), ("activity_id", activity_id),
+                 ("root_activity_id", root_activity_id), ("name", name)]
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Можно указывать только один фильтр одновременно"
+            )
+
         if building_id is not None:
             organizations = await organization_service.get_organizations_in_buildings(db, building_id)
             logger.info("Получены организации для здания id=%s, count=%s", building_id, len(organizations))
@@ -53,11 +108,12 @@ async def list_organizations(
             logger.info("Поиск организаций по имени='%s', найдено=%s", name, len(organizations))
             return organizations
 
-        # Если фильтры не заданы — вернём все организации (или можно сделать 400)
         organizations = await organization_service.get_all_organizations(db)
         logger.info("Получен общий список организаций, count=%s", len(organizations))
         return organizations
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("Ошибка при получении списка организаций: %s", e)
         raise HTTPException(status_code=500, detail="Internal Server Error")

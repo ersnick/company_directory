@@ -69,3 +69,37 @@ class OrganizationService:
         except Exception as e:
             logger.error("Ошибка при поиске организаций по имени '%s': %s", name, e)
             return []
+
+    async def get_organizations_in_rectangle(
+            self, db: AsyncSession, lat_min: float, lat_max: float, lon_min: float, lon_max: float
+    ) -> List[Organization]:
+        try:
+            orgs = await self.repository.get_in_rectangle(db, lat_min, lat_max, lon_min, lon_max)
+            logger.info(
+                "Успешно получены %s организаций в прямоугольнике [%s,%s]x[%s,%s]",
+                len(orgs), lat_min, lat_max, lon_min, lon_max
+            )
+            return orgs
+        except Exception as e:
+            logger.error(
+                "Ошибка в сервисе при получении организаций в прямоугольнике [%s,%s]x[%s,%s]: %s",
+                lat_min, lat_max, lon_min, lon_max, e
+            )
+            return []
+
+    async def get_organizations_in_radius(
+            self, db: AsyncSession, lat: float, lon: float, radius_km: float
+    ) -> List[Organization]:
+        try:
+            orgs = await self.repository.get_in_radius(db, lat, lon, radius_km)
+            logger.info(
+                "Успешно получены %s организаций в радиусе %s км от точки (%s, %s)",
+                len(orgs), radius_km, lat, lon
+            )
+            return orgs
+        except Exception as e:
+            logger.error(
+                "Ошибка в сервисе при получении организаций в радиусе (%s, %s), r=%s: %s",
+                lat, lon, radius_km, e
+            )
+            return []

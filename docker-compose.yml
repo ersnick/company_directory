@@ -11,6 +11,11 @@ services:
       - POSTGRES_DB=company_derectory
     networks:
       - company_derectory_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d company_derectory"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   app:
     build: ./app
@@ -22,8 +27,9 @@ services:
     env_file:
       - ./.env
     depends_on:
-      - postgres
-    command: sh -c "./wait-for-it.sh postgres alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
+      postgres:
+        condition: service_healthy
+    command: sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
     networks:
       - company_derectory_network
 

@@ -19,7 +19,21 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="REST API приложения для справочника Организаций, Зданий, Деятельности",
+    description="""
+API для работы с организациями и зданиями.
+Поддерживаются фильтры по зданию, виду деятельности, геолокации и имени.
+Возможен поиск организаций по дереву деятельности.
+""",
+    version="1.0.0",
+    contact={
+        "name": "Nikita Ershov",
+        "email": "ershov-n-a1009@mail.ru",
+        "tg": "@ern1ck"
+    },
+    lifespan=lifespan,
+)
 
 app.include_router(organization.router)
 

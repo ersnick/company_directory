@@ -25,7 +25,7 @@ class Activity(BaseModel):
     )
 
     organizations: Mapped[List["Organization"]] = relationship(
-        secondary="organization_activity",   # тут указываем имя таблицы как строку
+        secondary="organization_activity",
         back_populates="activities",
         lazy="selectin",
     )

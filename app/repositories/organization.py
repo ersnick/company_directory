@@ -170,6 +170,7 @@ class OrganizationRepository(BaseRepository[Organization]):
                 select(Organization)
                 .join(Organization.activities)
                 .where(Activity.id.in_(activity_ids))
+                .distinct()
             )
             orgs = result.scalars().all()
             logger.info(
